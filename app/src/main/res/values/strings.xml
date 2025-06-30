@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Planar Classification</string>
+    <string name="neural_playground">Neural Playground</string>
+    <string name="coursera_subtitle">Coursera Deep Learning - Week 2</string>
+
+    <!-- Button texts -->
+    <string name="classify_point">Classify Point</string>
+    <string name="run_benchmark">Run Benchmark</string>
+    <string name="clear_history">Clear</string>
+    <string name="use_gpu">Use GPU:</string>
+
+    <!-- Status texts -->
+    <string name="ready_to_classify">Ready to run classification</string>
+    <string name="dpad_instructions">Use D-pad to move, Center to classify</string>
+    <string name="cpu_progress">CPU Progress:</string>
+    <string name="gpu_progress">GPU Progress:</string>
+
+    <!-- Remote control instructions -->
+    <string name="remote_instructions">Neural Network Controls:\n• D-pad: Move cursor\n• Center: Classify point\n• Menu: Run benchmark\n• Back: Clear history</string>
+</resources>

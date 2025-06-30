@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Default Material Design colors -->
+    <color name="purple_200">#FFBB86FC</color>
+    <color name="purple_500">#FF6200EE</color>
+    <color name="purple_700">#FF3700B3</color>
+    <color name="teal_200">#FF03DAC5</color>
+    <color name="teal_700">#FF018786</color>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+
+    <!-- Neural Network App specific colors (matching Compose theme) -->
+    <color name="neural_primary">#FF2196F3</color>
+    <color name="neural_secondary">#FF4CAF50</color>
+    <color name="neural_accent">#FFFF9800</color>
+
+    <!-- TV background -->
+    <color name="tv_background">#FF121212</color>
+
+    <!-- Classification colors -->
+    <color name="red_point">#FFFF0000</color>
+    <color name="blue_point">#FF0000FF</color>
+    <color name="cursor_color">#FF000000</color>
+
+    <!-- Compose theme colors (matching Color.kt) -->
+    <color name="purple_80">#FFD0BCFF</color>
+    <color name="purple_grey_80">#FFCCC2DC</color>
+    <color name="pink_80">#FFEFB8C8</color>
+    <color name="purple_40">#FF6650a4</color>
+    <color name="purple_grey_40">#FF625b71</color>
+    <color name="pink_40">#FF7D5260</color>
+
+    <!-- UI colors -->
+    <color name="background_light">#FFF5F5F5</color>
+    <color name="surface_light">#FFFFFFFF</color>
+    <color name="coordinate_background">#FFE3F2FD</color>
+    <color name="instructions_background">#FFFFF3E0</color>
+</resources>

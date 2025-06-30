@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Simple TV Banner for Android TV launcher -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Background -->
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:startColor="#FF2196F3"
+                android:endColor="#FF1976D2"
+                android:angle="45" />
+        </shape>
+    </item>
+
+    <!-- Neural Network Icon -->
+    <item
+        android:width="80dp"
+        android:height="60dp"
+        android:gravity="center">
+        <vector xmlns:android="http://schemas.android.com/apk/res/android"
+            android:width="80dp"
+            android:height="60dp"
+            android:viewportWidth="80"
+            android:viewportHeight="60">
+
+            <!-- Simple neural network representation using paths -->
+            <!-- Input layer nodes -->
+            <path
+                android:fillColor="#FFFFFF"
+                android:pathData="M15,20 C18.3,20 21,17.3 21,14 C21,10.7 18.3,8 15,8 C11.7,8 9,10.7 9,14 C9,17.3 11.7,20 15,20 Z"/>
+            <path
+                android:fillColor="#FFFFFF"
+                android:pathData="M15,40 C18.3,40 21,37.3 21,34 C21,30.7 18.3,28 15,28 C11.7,28 9,30.7 9,34 C9,37.3 11.7,40 15,40 Z"/>
+
+            <!-- Hidden layer nodes -->
+            <path
+                android:fillColor="#FFFFFF"
+                android:pathData="M40,15 C43.3,15 46,12.3 46,9 C46,5.7 43.3,3 40,3 C36.7,3 34,5.7 34,9 C34,12.3 36.7,15 40,15 Z"/>
+            <path
+                android:fillColor="#FFFFFF"
+                android:pathData="M40,30 C43.3,30 46,27.3 46,24 C46,20.7 43.3,18 40,18 C36.7,18 34,20.7 34,24 C34,27.3 36.7,30 40,30 Z"/>
+            <path
+                android:fillColor="#FFFFFF"
+                android:pathData="M40,45 C43.3,45 46,42.3 46,39 C46,35.7 43.3,33 40,33 C36.7,33 34,35.7 34,39 C34,42.3 36.7,45 40,45 Z"/>
+
+            <!-- Output layer node -->
+            <path
+                android:fillColor="#FFFFFF"
+                android:pathData="M65,30 C68.3,30 71,27.3 71,24 C71,20.7 68.3,18 65,18 C61.7,18 59,20.7 59,24 C59,27.3 61.7,30 65,30 Z"/>
+
+            <!-- Connections -->
+            <path
+                android:strokeColor="#FFFFFF"
+                android:strokeWidth="1"
+                android:pathData="M21,14 L34,9"/>
+            <path
+                android:strokeColor="#FFFFFF"
+                android:strokeWidth="1"
+                android:pathData="M21,14 L34,24"/>
+            <path
+                android:strokeColor="#FFFFFF"
+                android:strokeWidth="1"
+                android:pathData="M21,14 L34,39"/>
+            <path
+                android:strokeColor="#FFFFFF"
+                android:strokeWidth="1"
+                android:pathData="M21,34 L34,9"/>
+            <path
+                android:strokeColor="#FFFFFF"
+                android:strokeWidth="1"
+                android:pathData="M21,34 L34,24"/>
+            <path
+                android:strokeColor="#FFFFFF"
+                android:strokeWidth="1"
+                android:pathData="M21,34 L34,39"/>
+            <path
+                android:strokeColor="#FFFFFF"
+                android:strokeWidth="1"
+                android:pathData="M46,9 L59,24"/>
+            <path
+                android:strokeColor="#FFFFFF"
+                android:strokeWidth="1"
+                android:pathData="M46,24 L59,24"/>
+            <path
+                android:strokeColor="#FFFFFF"
+                android:strokeWidth="1"
+                android:pathData="M46,39 L59,24"/>
+        </vector>
+    </item>
+
+</layer-list>

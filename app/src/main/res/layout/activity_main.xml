@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="horizontal"
+    android:padding="16dp"
+    android:background="#F5F5F5"
+    tools:context=".MainActivity">
+
+    <!-- Left Panel: Controls and Info -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:padding="8dp">
+
+        <!-- Title -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Neural Playground"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:textColor="@android:color/black"
+            android:gravity="center"
+            android:layout_marginBottom="8dp" />
+
+        <!-- Subtitle -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Coursera Deep Learning - Week 2"
+            android:textSize="16sp"
+            android:textColor="@android:color/black"
+            android:gravity="center"
+            android:layout_marginBottom="16dp" />
+
+        <!-- Current Coordinates -->
+        <TextView
+            android:id="@+id/coordinateText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Current: (0.00, 0.00)"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="@android:color/black"
+            android:gravity="center"
+            android:background="#E3F2FD"
+            android:padding="8dp"
+            android:layout_marginBottom="16dp" />
+
+        <!-- Control Buttons -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:layout_marginBottom="16dp">
+
+            <Button
+                android:id="@+id/classifyButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Classify Point"
+                android:layout_marginEnd="8dp"
+                android:focusable="true"
+                android:nextFocusRight="@+id/benchmarkButton" />
+
+            <Button
+                android:id="@+id/benchmarkButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Run Benchmark"
+                android:layout_marginEnd="8dp"
+                android:focusable="true"
+                android:nextFocusLeft="@+id/classifyButton"
+                android:nextFocusRight="@+id/clearButton" />
+
+            <Button
+                android:id="@+id/clearButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Clear"
+                android:focusable="true"
+                android:nextFocusLeft="@+id/benchmarkButton" />
+
+        </LinearLayout>
+
+        <!-- GPU Toggle -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:layout_marginBottom="16dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Use GPU: "
+                android:textSize="16sp"
+                android:textColor="@android:color/black" />
+
+            <ToggleButton
+                android:id="@+id/gpuToggle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textOn="ON"
+                android:textOff="OFF"
+                android:focusable="true" />
+
+        </LinearLayout>
+
+        <!-- Progress Bars -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="CPU Progress:"
+            android:textColor="@android:color/black"
+            android:textSize="14sp" />
+
+        <ProgressBar
+            android:id="@+id/cpuBar"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:progressTint="#4CAF50" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="GPU Progress:"
+            android:textColor="@android:color/black"
+            android:textSize="14sp" />
+
+        <ProgressBar
+            android:id="@+id/gpuBar"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:progressTint="#2196F3" />
+
+        <!-- Status Text 1 -->
+        <TextView
+            android:id="@+id/textView1"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:text="Ready to run classification"
+            android:textSize="14sp"
+            android:textColor="@android:color/black"
+            android:background="@android:color/white"
+            android:padding="8dp"
+            android:layout_marginBottom="8dp"
+            android:scrollbars="vertical" />
+
+        <!-- Status Text 2 -->
+        <TextView
+            android:id="@+id/textView2"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:text="Use D-pad to move, Center to classify"
+            android:textSize="12sp"
+            android:textColor="@android:color/black"
+            android:background="@android:color/white"
+            android:padding="8dp"
+            android:scrollbars="vertical" />
+
+    </LinearLayout>
+
+    <!-- Right Panel: Coordinate System Visualization -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:padding="8dp">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Neural Network Visualization"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="@android:color/black"
+            android:gravity="center"
+            android:layout_marginBottom="8dp" />
+
+        <ImageView
+            android:id="@+id/coordinateView"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:background="@android:color/white"
+            android:scaleType="fitCenter"
+            android:contentDescription="Neural network visualization" />
+
+        <!-- Remote Control Instructions -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Neural Network Controls:\n• D-pad: Move cursor\n• Center: Classify point\n• Menu: Run benchmark\n• Back: Clear history"
+            android:textSize="12sp"
+            android:textColor="@android:color/black"
+            android:background="#FFF3E0"
+            android:padding="8dp"
+            android:layout_marginTop="8dp" />
+
+    </LinearLayout>
+
+</LinearLayout>
