@@ -35,4 +35,17 @@
     <color name="surface_light">#FFFFFFFF</color>
     <color name="coordinate_background">#FFE3F2FD</color>
     <color name="instructions_background">#FFFFF3E0</color>
+
+    <!-- Enhanced focus and navigation colors -->
+    <color name="button_focus_highlight">#FF455A64</color>        <!-- Dark blue-grey for button focus -->
+    <color name="text_area_focus_highlight">#FFECEFF1</color>     <!-- Light grey for text area focus -->
+    <color name="coordinate_area_highlight">#FFE8F5E8</color>     <!-- Light green for coordinate area -->
+    <color name="visualization_area_highlight">#FFF3E5F5</color>  <!-- Light purple for visualization area -->
+
+    <!-- Button original colors for restoration -->
+    <color name="button_classify_normal">#4CAF50</color>
+    <color name="button_benchmark_normal">#FF9800</color>
+    <color name="button_clear_normal">#F44336</color>
+    <color name="button_navigate_normal">#9C27B0</color>          <!-- Purple for new navigate button -->
+    <color name="button_toggle_normal">#607D8B</color>            <!-- Blue-grey for toggle button -->
 </resources>

@@ -33,13 +33,13 @@ class MainActivity : Activity() {
     companion object {
         private const val TAG = "NeuralPlayground"
 
-        // 원본 데이터셋 좌표 범위
+        // Original dataset coordinate range
         private const val X_MIN = -4.5f
         private const val X_MAX = 4.0f
         private const val Y_MIN = -4.0f
         private const val Y_MAX = 4.0f
 
-        // 벤치마크용 테스트 좌표들 (원형 패턴)
+        // Benchmark test coordinates (circular pattern)
         private val benchmarkCoordinates = arrayOf(
             Pair(-3.0f, -2.0f), Pair(-2.0f, -3.0f), Pair(0.0f, -3.5f), Pair(2.0f, -3.0f),
             Pair(3.0f, -2.0f), Pair(3.5f, 0.0f), Pair(3.0f, 2.0f), Pair(2.0f, 3.0f),
@@ -50,40 +50,40 @@ class MainActivity : Activity() {
             Pair(-1.5f, 1.5f), Pair(-4.0f, 0.0f), Pair(3.5f, 0.0f), Pair(0.0f, -3.8f)
         )
 
-        // 🎯 Ground Truth 함수 (코세라 딥러닝 3주차 - 원형 패턴)
+        // 🎯 Ground Truth function (Coursera Deep Learning Week 3 - Circular pattern)
         fun getGroundTruth(x: Float, y: Float): Boolean {
-            // 일반적인 코세라 패턴: 중심에서 거리 기반 분류
+            // General Coursera pattern: distance-based classification from center
             val distance = kotlin.math.sqrt(x * x + y * y)
 
-            // 복합 패턴: 거리 + 각도 조합 (더 현실적인 패턴)
+            // Complex pattern: distance + angle combination (more realistic pattern)
             val angle = kotlin.math.atan2(y, x)
 
-            // 패턴 1: 내부 원 (거리 < 1.5) → Blue
+            // Pattern 1: Inner circle (distance < 1.5) → Blue
             if (distance < 1.5) return true
 
-            // 패턴 2: 외부 링 (거리 > 3.0) → Blue
+            // Pattern 2: Outer ring (distance > 3.0) → Blue
             if (distance > 3.0) return true
 
-            // 패턴 3: 중간 영역에서 각도 기반 분류
-            // 1사분면과 3사분면에서 특정 조건 → Blue
+            // Pattern 3: Angle-based classification in middle region
+            // First and third quadrants with specific conditions → Blue
             val isFirstOrThirdQuadrant = (x > 0 && y > 0) || (x < 0 && y < 0)
             if (distance >= 1.5 && distance <= 3.0) {
                 return isFirstOrThirdQuadrant && (kotlin.math.abs(angle) < kotlin.math.PI / 3)
             }
 
-            // 기본값: Red
+            // Default: Red
             return false
         }
 
-        // 🎯 대안 Ground Truth 함수들 (다른 패턴들)
+        // 🎯 Alternative Ground Truth functions (different patterns)
         fun getGroundTruthSimpleCircle(x: Float, y: Float): Boolean {
-            // 단순 원형: 중심에서 거리 < 2.0 → Blue
+            // Simple circle: distance from center < 2.0 → Blue
             val distance = kotlin.math.sqrt(x * x + y * y)
             return distance < 2.0
         }
 
         fun getGroundTruthSpiral(x: Float, y: Float): Boolean {
-            // 나선형 패턴
+            // Spiral pattern
             val distance = kotlin.math.sqrt(x * x + y * y)
             val angle = kotlin.math.atan2(y, x)
             val spiralValue = distance - 0.5 * angle
@@ -98,7 +98,7 @@ class MainActivity : Activity() {
     private var tfliteModel: MappedByteBuffer? = null
     private var inputBuffer: ByteBuffer? = null
 
-    // 🚀 성능 개선: 인터프리터 재사용
+    // 🚀 Performance improvement: Interpreter reuse
     private var cpuInterpreter: Interpreter? = null
     private var gpuInterpreter: Interpreter? = null
     private var npuInterpreter: Interpreter? = null
@@ -109,19 +109,50 @@ class MainActivity : Activity() {
     private var isGpuAvailable = false
     private var isNnApiAvailable = false
 
-    // 현재 좌표 (리모컨으로 조작)
+    // Current coordinates (controlled by remote)
     private var currentX: Float = 0.0f
     private var currentY: Float = 0.0f
     private val moveStep = 0.2f
 
-    // 분류 결과 저장
+    // Classification result storage
     private val classificationHistory = mutableListOf<ClassificationPoint>()
 
-    // 🔧 안전한 Toast 핸들러
+    // 🔧 Safe Toast handler
     private val mainHandler = Handler(Looper.getMainLooper())
 
-    // 📜 ScrollView 참조 (자동 스크롤용)
+    // 📜 ScrollView reference (for auto-scroll)
     private lateinit var resultsScrollView: android.widget.ScrollView
+
+    // 🎮 Enhanced navigation state management
+    private var lastBackKeyTime: Long = 0
+    private val BACK_KEY_TIMEOUT = 2000L // 2 seconds timeout for consecutive back presses
+    private var backKeyPressCount = 0
+
+    // Focus management (Clear button removed)
+    private enum class FocusState {
+        COORDINATE_AREA,     // Default state - coordinate manipulation
+        BUTTON_CLASSIFY,
+        BUTTON_BENCHMARK,
+        BUTTON_NAVIGATE,     // Navigation button (Clear button removed)
+        BUTTON_GPU_TOGGLE,   // 🔧 Fixed: Added GPU toggle to focus order
+        RESULT_AREA_1,       // Left text area
+        RESULT_AREA_2,       // Right text area
+        VISUALIZATION_AREA   // Right panel - Neural Network Visualization
+    }
+
+    private var currentFocusState = FocusState.COORDINATE_AREA
+
+    // 🔧 Fixed: Added BUTTON_GPU_TOGGLE to the focus order
+    private val focusStateOrder = arrayOf(
+        FocusState.COORDINATE_AREA,
+        FocusState.BUTTON_CLASSIFY,
+        FocusState.BUTTON_BENCHMARK,
+        FocusState.BUTTON_NAVIGATE,
+        FocusState.BUTTON_GPU_TOGGLE,  // 🔧 Fixed: Now included in navigation order
+        FocusState.RESULT_AREA_1,
+        FocusState.RESULT_AREA_2,
+        FocusState.VISUALIZATION_AREA
+    )
 
     data class ClassificationPoint(
         val x: Float,
@@ -129,8 +160,8 @@ class MainActivity : Activity() {
         val probability: Float,
         val isBlue: Boolean,
         val inferenceTime: Long,
-        val groundTruth: Boolean,  // 실제 정답
-        val isCorrect: Boolean     // 예측이 맞는지 여부
+        val groundTruth: Boolean,  // Actual correct answer
+        val isCorrect: Boolean     // Whether prediction is correct
     )
 
     data class BenchmarkResult(
@@ -161,7 +192,7 @@ class MainActivity : Activity() {
             setupUI()
             setupVisualization()
 
-            // TensorFlow Lite 모델 로드
+            // Load TensorFlow Lite model
             tfliteModel = try {
                 loadModelFile("original_planar_classifier.tflite")
             } catch (e: IOException) {
@@ -170,12 +201,12 @@ class MainActivity : Activity() {
                 return
             }
 
-            // 🚀 성능 개선: 입력 버퍼 미리 할당
+            // 🚀 Performance improvement: Pre-allocate input buffer
             inputBuffer = ByteBuffer.allocateDirect(4 * 2).apply {
                 order(ByteOrder.nativeOrder())
             }
 
-            // 🚀 성능 개선: 인터프리터 미리 생성
+            // 🚀 Performance improvement: Pre-create interpreters
             initializeInterpreters()
 
             Log.d(TAG, "🎉 Planar Classifier initialized successfully!")
@@ -186,20 +217,20 @@ class MainActivity : Activity() {
         }
     }
 
-    // 🚀 성능 개선: 인터프리터 미리 생성
+    // 🚀 Performance improvement: Pre-create interpreters
     private fun initializeInterpreters() {
         try {
             Log.d(TAG, "🔧 Initializing interpreters...")
 
-            // CPU 인터프리터
+            // CPU interpreter
             val cpuOptions = Interpreter.Options().apply {
                 setNumThreads(4)
-                setUseXNNPACK(true) // 🚀 XNNPACK 활성화
+                setUseXNNPACK(true) // 🚀 Enable XNNPACK
             }
             cpuInterpreter = Interpreter(tfliteModel!!, cpuOptions)
             Log.d(TAG, "✅ CPU interpreter initialized")
 
-            // GPU 인터프리터
+            // GPU interpreter
             if (isGpuAvailable) {
                 try {
                     gpuDelegate = createGpuDelegate()
@@ -215,7 +246,7 @@ class MainActivity : Activity() {
                 }
             }
 
-            // NPU 인터프리터
+            // NPU interpreter
             if (isNnApiAvailable) {
                 try {
                     nnApiDelegate = createNnApiDelegate()
@@ -236,7 +267,7 @@ class MainActivity : Activity() {
         }
     }
 
-    // 🔍 디바이스 하드웨어 정보 로깅 (간소화)
+    // 🔍 Device hardware information logging (simplified)
     private fun logDeviceInformation() {
         Log.i(TAG, "========== DEVICE INFO ==========")
         Log.i(TAG, "Device: ${Build.MANUFACTURER} ${Build.MODEL}")
@@ -253,7 +284,7 @@ class MainActivity : Activity() {
         Log.i(TAG, "================================")
     }
 
-    // 🔍 TensorFlow Lite 정보 확인 (간소화)
+    // 🔍 TensorFlow Lite information check (simplified)
     private fun logTensorFlowLiteInformation() {
         Log.i(TAG, "========== TF LITE INFO ==========")
 
@@ -284,7 +315,7 @@ class MainActivity : Activity() {
         Log.i(TAG, "=================================")
     }
 
-    // 🔍 OpenGL 지원 확인 (간소화)
+    // 🔍 OpenGL support check (simplified)
     private fun checkOpenGLSupport() {
         Log.i(TAG, "========== OPENGL CHECK ==========")
 
@@ -298,11 +329,11 @@ class MainActivity : Activity() {
         Log.i(TAG, "=================================")
     }
 
-    // 🔍 가속기 확인 (안전성 강화)
+    // 🔍 Accelerator check (enhanced safety)
     private fun checkAcceleratorAvailability() {
         Log.i(TAG, "========== ACCELERATOR CHECK ==========")
 
-        // GPU 확인
+        // GPU check
         isGpuAvailable = try {
             val gpuClass = Class.forName("org.tensorflow.lite.gpu.GpuDelegate")
             val constructor = gpuClass.getConstructor()
@@ -315,7 +346,7 @@ class MainActivity : Activity() {
             false
         }
 
-        // NPU 확인
+        // NPU check
         isNnApiAvailable = try {
             val nnApiClass = Class.forName("org.tensorflow.lite.nnapi.NnApiDelegate")
             val constructor = nnApiClass.getConstructor()
@@ -332,7 +363,7 @@ class MainActivity : Activity() {
         Log.i(TAG, "======================================")
     }
 
-    // 🔧 안전한 GPU delegate 생성
+    // 🔧 Safe GPU delegate creation
     private fun createGpuDelegate(): Any? {
         return if (isGpuAvailable) {
             try {
@@ -345,7 +376,7 @@ class MainActivity : Activity() {
         } else null
     }
 
-    // 🔧 안전한 NNAPI delegate 생성
+    // 🔧 Safe NNAPI delegate creation
     private fun createNnApiDelegate(): Any? {
         return if (isNnApiAvailable) {
             try {
@@ -358,7 +389,7 @@ class MainActivity : Activity() {
         } else null
     }
 
-    // Delegate 추가
+    // Delegate addition
     private fun addDelegate(options: Interpreter.Options, delegate: Any): Boolean {
         return try {
             val delegateInterface = Class.forName("org.tensorflow.lite.Delegate")
@@ -371,7 +402,7 @@ class MainActivity : Activity() {
         }
     }
 
-    // Delegate 정리
+    // Delegate cleanup
     private fun closeDelegate(delegate: Any?) {
         delegate?.let {
             try {
@@ -395,27 +426,33 @@ class MainActivity : Activity() {
         binding.classifyButton.setOnClickListener { onClassifyClick(it) }
         binding.benchmarkButton.setOnClickListener { onBenchmarkClick(it) }
         binding.gpuToggle.setOnClickListener { onGPUClick(it) }
-        binding.clearButton.setOnClickListener { onClearClick(it) }
+        binding.navigateButton.setOnClickListener { onNavigateClick(it) }
 
-        // 🔍 ScrollView 참조 설정
+        // 🔍 ScrollView reference setup
         resultsScrollView = findViewById(R.id.resultsScrollView)
 
-        // 가속기 사용 불가능하면 토글 비활성화
+        // Disable accelerator toggle if no acceleration available
         binding.gpuToggle.isEnabled = isGpuAvailable || isNnApiAvailable
 
-        // 🔄 TextView 스크롤 기능 활성화
+        // 🔄 Enable TextView scroll functionality
         binding.textView1.movementMethod = android.text.method.ScrollingMovementMethod()
         binding.textView2.movementMethod = android.text.method.ScrollingMovementMethod()
 
-        // 초기 UI 상태 설정
+        // 🎮 Setup button focus management
+        setupButtonFocus()
+
+        // Initial UI state setup
         binding.textView1.text = """
             |🎯 Classification Results
             |
             |Ready to run planar classification!
             |
-            |📱 How to use:
-            |• Use D-pad to move the cursor
+            |📱 Enhanced Navigation Controls:
+            |• Use D-pad to move the cursor (coordinate area)
             |• Press Center button to classify current point
+            |• Use navigation keys to move between controls
+            |• 🎮 Nav button: Switch to visualization area
+            |• 🚪 Exit key: Leave Results/Visualization → Focus Classify
             |• Results will show predicted vs actual class
             |• ✅ = Correct prediction, ❌ = Wrong prediction
             |
@@ -424,18 +461,20 @@ class MainActivity : Activity() {
             |• Hardware acceleration (CPU/NPU)
             |• Accuracy tracking and statistics
             |• Interactive coordinate visualization
+            |• Enhanced navigation and focus management
+            |• Dual-area cursor control
             |
             |📜 This area is scrollable - swipe up/down to see more content
         """.trimMargin()
 
         binding.textView2.text = when {
             isGpuAvailable && isNnApiAvailable -> """
-                |📊 System Status
+                |📊 System Status - Android TV Ready
                 |
                 |🚀 GPU + NPU available
                 |Hardware acceleration ready
                 |
-                |Device: SKB BMA-AI100
+                |Device: SKB BMA-AI100 (4K TV Optimized)
                 |Backends: CPU, GPU, NPU
                 |
                 |Ready for high-performance
@@ -445,9 +484,18 @@ class MainActivity : Activity() {
                 |• CPU: ~1ms per inference
                 |• NPU: ~2ms per inference
                 |• High accuracy on test patterns
+                |
+                |🎮 TV Remote Navigation:
+                |• D-pad: Move cursor (coordinate/visualization)
+                |• Center: Execute action
+                |• Navigation keys: Move between controls
+                |• 🎮 Nav button: Switch to visualization
+                |• Up/Down: Navigate or scroll
+                |• 🚪 Exit key: Leave area → Focus Classify
+                |• Results area: Exit key to exit
             """.trimMargin()
             isGpuAvailable -> """
-                |📊 System Status
+                |📊 System Status - Android TV
                 |
                 |🎉 GPU available
                 |Hardware acceleration enabled
@@ -460,6 +508,8 @@ class MainActivity : Activity() {
                 |🎯 Expected performance:
                 |• CPU: ~1ms per inference
                 |• GPU: Variable performance
+                |
+                |🎮 TV Remote controls optimized
             """.trimMargin()
             isNnApiAvailable -> """
                 |📊 System Status
@@ -477,6 +527,14 @@ class MainActivity : Activity() {
                 |• CPU: ~1ms per inference
                 |• NPU: ~2ms per inference
                 |• Optimized for neural workloads
+                |
+                |🎮 Enhanced Navigation:
+                |• D-pad: Move cursor (coordinate/visualization)
+                |• Nav keys: Move between controls
+                |• 🎮 Nav button: Switch to visualization
+                |• Up/Down: Navigate or scroll
+                |• 🚪 Exit key: Leave area → Focus Classify
+                |• Results area: Exit key to exit
             """.trimMargin()
             else -> """
                 |📊 System Status
@@ -492,17 +550,154 @@ class MainActivity : Activity() {
                 |🎯 Expected performance:
                 |• CPU: ~1-2ms per inference
                 |• No acceleration available
+                |
+                |🎮 Enhanced Navigation:
+                |• Multiple control areas
+                |• Seamless area switching
+                |• Improved focus management
+                |• Results area: Exit key to exit
             """.trimMargin()
         }
 
         binding.cpuBar.progress = 0
         binding.gpuBar.progress = 0
 
-        // 텍스트 색상 설정
+        // Set text colors
         binding.textView1.setTextColor(Color.BLACK)
         binding.textView2.setTextColor(Color.BLACK)
 
         updateCoordinateDisplay()
+        updateFocusIndicator()
+    }
+
+    // 🎮 Setup button focus management for Android TV
+    private fun setupButtonFocus() {
+        // Make buttons focusable for TV remote navigation
+        binding.classifyButton.isFocusable = true
+        binding.benchmarkButton.isFocusable = true
+        binding.gpuToggle.isFocusable = true
+        binding.navigateButton.isFocusable = true
+
+        // Enhanced TV focus behavior
+        binding.classifyButton.isFocusableInTouchMode = false
+        binding.benchmarkButton.isFocusableInTouchMode = false
+        binding.gpuToggle.isFocusableInTouchMode = false
+        binding.navigateButton.isFocusableInTouchMode = false
+
+        // Make text areas focusable for scrolling
+        binding.textView1.isFocusable = true
+        binding.textView2.isFocusable = true
+        binding.textView1.isFocusableInTouchMode = false
+        binding.textView2.isFocusableInTouchMode = false
+
+        // Make right panel focusable for TV navigation
+        binding.coordinateView.isFocusable = true
+        binding.coordinateView.isFocusableInTouchMode = true
+
+        // TV-specific: Request focus on startup
+        binding.classifyButton.requestFocus()
+
+        Log.d(TAG, "🎮 Android TV button focus management initialized")
+    }
+
+    // 🎮 Update focus indicator visual feedback
+    private fun updateFocusIndicator() {
+        Log.d(TAG, "🎯 updateFocusIndicator() called - Setting focus to: ${currentFocusState.name}")
+
+        // Reset all button backgrounds
+        resetButtonHighlights()
+
+        // Highlight current focused element
+        when (currentFocusState) {
+            FocusState.COORDINATE_AREA -> {
+                // Highlight coordinate area with light green
+                highlightCoordinateArea()
+                Log.d(TAG, "🎯 Focus: Coordinate Area")
+            }
+            FocusState.BUTTON_CLASSIFY -> {
+                Log.d(TAG, "🎯 Setting focus to Classify Button - requesting focus...")
+                binding.classifyButton.requestFocus()
+                highlightButton(binding.classifyButton)
+                Log.d(TAG, "🎯 Focus: Classify Button - requestFocus() and highlight completed")
+            }
+            FocusState.BUTTON_BENCHMARK -> {
+                binding.benchmarkButton.requestFocus()
+                highlightButton(binding.benchmarkButton)
+                Log.d(TAG, "🎯 Focus: Benchmark Button")
+            }
+            FocusState.BUTTON_GPU_TOGGLE -> {
+                binding.gpuToggle.requestFocus()
+                highlightButton(binding.gpuToggle)
+                Log.d(TAG, "🎯 Focus: GPU Toggle Button")
+            }
+            FocusState.BUTTON_NAVIGATE -> {
+                binding.navigateButton.requestFocus()
+                highlightButton(binding.navigateButton)
+                Log.d(TAG, "🎯 Focus: Navigate Button")
+            }
+            FocusState.RESULT_AREA_1 -> {
+                binding.textView1.requestFocus()
+                highlightTextArea(binding.textView1)
+                Log.d(TAG, "🎯 Focus: Result Area 1 (Left)")
+            }
+            FocusState.RESULT_AREA_2 -> {
+                binding.textView2.requestFocus()
+                highlightTextArea(binding.textView2)
+                Log.d(TAG, "🎯 Focus: Result Area 2 (Right)")
+            }
+            FocusState.VISUALIZATION_AREA -> {
+                binding.coordinateView.requestFocus()
+                highlightVisualizationArea()
+                Log.d(TAG, "🎯 Focus: Visualization Area (Right Panel)")
+            }
+        }
+
+        updateCoordinateDisplay()
+        Log.d(TAG, "🎯 updateFocusIndicator() completed for: ${currentFocusState.name}")
+    }
+
+    private fun resetButtonHighlights() {
+        // Android TV optimized: Use safe color access with fallback
+        try {
+            binding.classifyButton.setBackgroundColor(Color.parseColor("#4CAF50"))
+            binding.benchmarkButton.setBackgroundColor(Color.parseColor("#FF9800"))
+            binding.gpuToggle.setBackgroundColor(Color.parseColor("#607D8B"))
+            binding.navigateButton.setBackgroundColor(Color.parseColor("#9C27B0"))
+        } catch (e: Exception) {
+            // Fallback colors for TV compatibility
+            binding.classifyButton.setBackgroundColor(Color.GREEN)
+            binding.benchmarkButton.setBackgroundColor(Color.rgb(255, 152, 0))
+            binding.gpuToggle.setBackgroundColor(Color.GRAY)
+            binding.navigateButton.setBackgroundColor(Color.rgb(156, 39, 176))
+        }
+
+        binding.textView1.setBackgroundColor(Color.parseColor("#F8F9FA"))
+        binding.textView2.setBackgroundColor(Color.parseColor("#F8F9FA"))
+        // 🔧 Ensure coordinate view always resets to white
+        binding.coordinateView.setBackgroundColor(Color.WHITE)
+        binding.coordinateText.setBackgroundColor(Color.parseColor("#E3F2FD"))
+    }
+
+    private fun highlightButton(button: View) {
+        // Android TV optimized: Dark blue-grey highlight for better visibility
+        button.setBackgroundColor(Color.parseColor("#455A64"))
+    }
+
+    private fun highlightTextArea(textView: View) {
+        textView.setBackgroundColor(Color.parseColor("#ECEFF1"))
+    }
+
+    private fun highlightCoordinateArea() {
+        binding.coordinateText.setBackgroundColor(Color.parseColor("#E8F5E8"))
+    }
+
+    private fun highlightVisualizationArea() {
+        // 🔧 Don't change background color to avoid visual artifacts in ImageView
+        // Just keep the white background and rely on text display for feedback
+        // binding.coordinateView.setBackgroundColor(Color.parseColor("#E3F2FD"))
+
+        // Alternative: could add a subtle border effect if needed
+        // For now, just rely on the text indicator showing "🎮 NEURAL VISUALIZATION"
     }
 
     private fun setupVisualization() {
@@ -514,7 +709,7 @@ class MainActivity : Activity() {
         cleanupResources()
     }
 
-    // 📜 자동 스크롤 기능 (내용이 업데이트될 때 맨 위로 스크롤)
+    // 📜 Auto-scroll feature (scroll to top when content updates)
     private fun scrollToTop() {
         try {
             mainHandler.post {
@@ -525,7 +720,7 @@ class MainActivity : Activity() {
         }
     }
 
-    // 📜 자동 스크롤 기능 (내용이 업데이트될 때 맨 아래로 스크롤)
+    // 📜 Auto-scroll feature (scroll to bottom when content updates)
     private fun scrollToBottom() {
         try {
             mainHandler.post {
@@ -560,51 +755,472 @@ class MainActivity : Activity() {
         }
     }
 
-    // 리모컨 키 이벤트 처리
+    // 🎮 Enhanced remote control key event handling for Android TV
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
+        // 🔍 Debug: Log all key events
+        Log.d(TAG, "onKeyDown - keyCode=$keyCode, currentFocus=${currentFocusState.name}")
+
+        // 🔍 Special logging for potential Exit keys
+        if (keyCode in 380..390 || keyCode == KeyEvent.KEYCODE_ESCAPE) {
+            Log.i(TAG, "🚪 POTENTIAL EXIT KEY DETECTED: keyCode=$keyCode")
+        }
+
         when (keyCode) {
+            // D-pad controls for coordinate movement (only in coordinate area)
             KeyEvent.KEYCODE_DPAD_UP -> {
-                currentY = (currentY + moveStep).coerceAtMost(Y_MAX)
-                updateCoordinateDisplay()
-                drawCoordinateSystem()
-                return true
+                if (currentFocusState == FocusState.COORDINATE_AREA || currentFocusState == FocusState.VISUALIZATION_AREA) {
+                    Log.d(TAG, "🔍 D-pad UP - Current state: ${currentFocusState.name} - Moving cursor")
+                    currentY = (currentY + moveStep).coerceAtMost(Y_MAX)
+                    updateCoordinateDisplay()
+                    drawCoordinateSystem()
+                    return true
+                } else {
+                    Log.d(TAG, "🔍 D-pad UP - Current state: ${currentFocusState.name} - Navigation mode")
+                    return handleNavigationUp()
+                }
             }
             KeyEvent.KEYCODE_DPAD_DOWN -> {
-                currentY = (currentY - moveStep).coerceAtLeast(Y_MIN)
-                updateCoordinateDisplay()
-                drawCoordinateSystem()
-                return true
+                if (currentFocusState == FocusState.COORDINATE_AREA || currentFocusState == FocusState.VISUALIZATION_AREA) {
+                    Log.d(TAG, "🔍 D-pad DOWN - Current state: ${currentFocusState.name} - Moving cursor")
+                    currentY = (currentY - moveStep).coerceAtLeast(Y_MIN)
+                    updateCoordinateDisplay()
+                    drawCoordinateSystem()
+                    return true
+                } else {
+                    Log.d(TAG, "🔍 D-pad DOWN - Current state: ${currentFocusState.name} - Navigation mode")
+                    return handleNavigationDown()
+                }
             }
             KeyEvent.KEYCODE_DPAD_LEFT -> {
-                currentX = (currentX - moveStep).coerceAtLeast(X_MIN)
-                updateCoordinateDisplay()
-                drawCoordinateSystem()
-                return true
+                if (currentFocusState == FocusState.COORDINATE_AREA || currentFocusState == FocusState.VISUALIZATION_AREA) {
+                    Log.d(TAG, "🔍 D-pad LEFT - Current state: ${currentFocusState.name} - Moving cursor")
+                    currentX = (currentX - moveStep).coerceAtLeast(X_MIN)
+                    updateCoordinateDisplay()
+                    drawCoordinateSystem()
+                    return true
+                } else {
+                    Log.d(TAG, "🔍 D-pad LEFT - Current state: ${currentFocusState.name} - Navigation mode")
+                    return handleNavigationLeft()
+                }
             }
             KeyEvent.KEYCODE_DPAD_RIGHT -> {
-                currentX = (currentX + moveStep).coerceAtMost(X_MAX)
-                updateCoordinateDisplay()
-                drawCoordinateSystem()
-                return true
+                if (currentFocusState == FocusState.COORDINATE_AREA || currentFocusState == FocusState.VISUALIZATION_AREA) {
+                    Log.d(TAG, "🔍 D-pad RIGHT - Current state: ${currentFocusState.name} - Moving cursor")
+                    currentX = (currentX + moveStep).coerceAtMost(X_MAX)
+                    updateCoordinateDisplay()
+                    drawCoordinateSystem()
+                    return true
+                } else {
+                    Log.d(TAG, "🔍 D-pad RIGHT - Current state: ${currentFocusState.name} - Navigation mode")
+                    return handleNavigationRight()
+                }
             }
+
+            // Action keys
             KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER -> {
-                if (!isRunning) classifyCurrentPoint()
-                return true
+                return handleCenterAction()
             }
             KeyEvent.KEYCODE_MEDIA_REWIND, KeyEvent.KEYCODE_MENU -> {
-                if (!isRunning) runBenchmark()
-                return true
+                return handleMenuKey()
             }
             KeyEvent.KEYCODE_MEDIA_FAST_FORWARD -> {
                 toggleAccelerator()
                 return true
             }
+
+            // 🎮 Enhanced Back key behavior: Clear history → Focus to Classify button
             KeyEvent.KEYCODE_BACK -> {
-                clearClassificationHistory()
-                return true
+                return handleBackKey()
+            }
+
+            // 🆕 Exit key (keyCode=385) for exiting specific areas - PRIMARY HANDLER
+            385 -> {
+                Log.d(TAG, "🚪 Exit key (385) detected in onKeyDown - calling handleExitKey()")
+                return handleExitKey()
+            }
+
+            // 🔍 Test: Handle common alternative exit/back key codes
+            KeyEvent.KEYCODE_ESCAPE -> {
+                Log.d(TAG, "🚪 ESCAPE key detected - calling handleExitKey()")
+                return handleExitKey()
+            }
+
+            // 🔍 Test: Handle unknown key codes that might be Exit key
+            in 380..390 -> {
+                Log.d(TAG, "🚪 Potential Exit key detected (keyCode=$keyCode) - calling handleExitKey()")
+                return handleExitKey()
+            }
+
+            // 🔍 Temporary test: Use specific keys to test Exit functionality
+            KeyEvent.KEYCODE_0 -> {
+                if (currentFocusState == FocusState.VISUALIZATION_AREA || currentFocusState == FocusState.RESULT_AREA_1 || currentFocusState == FocusState.RESULT_AREA_2) {
+                    Log.d(TAG, "🔍 TEST: Using '0' key as Exit key for testing")
+                    return handleExitKey()
+                }
+                return false
             }
         }
         return super.onKeyDown(keyCode, event)
+    }
+
+    // 🎮 Enhanced dispatchKeyEvent for better Exit key detection
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        // 🔍 Debug logging for key detection (only for ACTION_DOWN to avoid spam)
+        if (event.action == KeyEvent.ACTION_DOWN) {
+            Log.d(TAG, "dispatchKeyEvent - keyCode=${event.keyCode}, scanCode=${event.scanCode}, action=${event.action}, currentFocus=${currentFocusState.name}")
+        }
+
+        // Handle Exit key (keyCode=385) or alternative scan codes - but only if not already handled in onKeyDown
+        if ((event.keyCode == 385 || event.scanCode == 174) && event.action == KeyEvent.ACTION_DOWN) {
+            Log.d(TAG, "🚪 Exit key detected in dispatchKeyEvent (keyCode=${event.keyCode}, scanCode=${event.scanCode})")
+
+            // Don't handle here if keyCode=385 (let onKeyDown handle it)
+            if (event.keyCode == 385) {
+                Log.d(TAG, "🔄 Exit key keyCode=385 - letting onKeyDown handle it")
+                return super.dispatchKeyEvent(event)
+            }
+
+            // Handle alternative scan codes here
+            Log.d(TAG, "🚪 Exit key alternative scanCode detected - calling handleExitKey()")
+            val handled = handleExitKey()
+            if (handled) {
+                Log.d(TAG, "✅ Exit key handled successfully in dispatchKeyEvent")
+                return true
+            }
+        }
+
+        return super.dispatchKeyEvent(event)
+    }
+
+    // 🆕 Handle Exit key (keyCode=385) - Exit specific areas and return to Classify button
+    private fun handleExitKey(): Boolean {
+        Log.d(TAG, "🚪 handleExitKey() called - Current focus: ${currentFocusState.name}")
+
+        when (currentFocusState) {
+            FocusState.VISUALIZATION_AREA -> {
+                Log.d(TAG, "🚪 Processing Exit from VISUALIZATION_AREA")
+
+                // Exit visualization area and return to Classify button
+                val previousState = currentFocusState
+                currentFocusState = FocusState.BUTTON_CLASSIFY
+
+                Log.d(TAG, "🚪 Focus changed: $previousState → ${currentFocusState.name}")
+
+                // Force UI update on main thread
+                runOnUiThread {
+                    updateFocusIndicator()
+                    updateCoordinateDisplay()
+
+                    // Visual feedback - brief highlight
+                    binding.classifyButton.requestFocus()
+                    binding.classifyButton.setBackgroundColor(Color.parseColor("#2E7D32"))
+
+                    Handler(Looper.getMainLooper()).postDelayed({
+                        binding.classifyButton.setBackgroundColor(Color.parseColor("#4CAF50"))
+                    }, 1000)
+                }
+
+                Log.d(TAG, "🚪 Exit key - Successfully exited Visualization area to Classify button")
+                return true
+            }
+            FocusState.RESULT_AREA_1, FocusState.RESULT_AREA_2 -> {
+                Log.d(TAG, "🚪 Processing Exit from RESULT_AREA (${currentFocusState.name})")
+
+                // Exit Results & Analysis area and return to Classify button
+                val previousState = currentFocusState
+                currentFocusState = FocusState.BUTTON_CLASSIFY
+
+                Log.d(TAG, "🚪 Focus changed: $previousState → ${currentFocusState.name}")
+
+                // Force UI update on main thread
+                runOnUiThread {
+                    updateFocusIndicator()
+                    updateCoordinateDisplay()
+
+                    // Visual feedback - brief highlight
+                    binding.classifyButton.requestFocus()
+                    binding.classifyButton.setBackgroundColor(Color.parseColor("#2E7D32"))
+
+                    Handler(Looper.getMainLooper()).postDelayed({
+                        binding.classifyButton.setBackgroundColor(Color.parseColor("#4CAF50"))
+                    }, 1000)
+                }
+
+                Log.d(TAG, "🚪 Exit key - Successfully exited Results area to Classify button")
+                return true
+            }
+            FocusState.COORDINATE_AREA -> {
+                // 🔧 FIXED: Handle exit from coordinate area (fallback for visualization area)
+                Log.d(TAG, "🔧 Exit from COORDINATE_AREA - Moving to Classify button as fallback")
+                currentFocusState = FocusState.BUTTON_CLASSIFY
+
+                runOnUiThread {
+                    updateFocusIndicator()
+                    updateCoordinateDisplay()
+
+                    // Visual feedback
+                    binding.classifyButton.requestFocus()
+                    binding.classifyButton.setBackgroundColor(Color.parseColor("#2E7D32"))
+
+                    Handler(Looper.getMainLooper()).postDelayed({
+                        binding.classifyButton.setBackgroundColor(Color.parseColor("#4CAF50"))
+                    }, 1000)
+                }
+
+                Log.d(TAG, "🔧 Fallback: Moved from COORDINATE_AREA to Classify button")
+                return true
+            }
+            else -> {
+                Log.d(TAG, "🚪 Exit key - No action defined for ${currentFocusState.name}")
+                return true
+            }
+        }
+    }
+
+    // 🆕 New: Menu key for running benchmark (kept for compatibility)
+    private fun handleMenuKey(): Boolean {
+        // Menu key now only runs benchmark, Exit key handles area navigation
+        if (!isRunning) {
+            runBenchmark()
+            Log.d(TAG, "📱 Menu key - Running benchmark from ${currentFocusState.name}")
+        } else {
+            Log.d(TAG, "📱 Menu key - Benchmark already running")
+        }
+        return true
+    }
+
+    // 🎮 Handle Back key with consecutive press logic (Visualization area now uses Exit key only for exit)
+    private fun handleBackKey(): Boolean {
+        // 🔧 Results & Analysis area now requires Exit key to exit (not Back key)
+        if (currentFocusState == FocusState.RESULT_AREA_1 || currentFocusState == FocusState.RESULT_AREA_2) {
+            // Don't show toast message to avoid UI clutter
+            Log.d(TAG, "🔙 Back key - Results area requires Exit key to exit")
+            return true
+        }
+
+        // 🔧 Visualization area: Back key only clears history, doesn't exit (use Exit key to exit)
+        if (currentFocusState == FocusState.VISUALIZATION_AREA) {
+            Log.d(TAG, "🔙 Back key - Visualization area: clearing history only (use Exit key to exit)")
+
+            val currentTime = SystemClock.uptimeMillis()
+
+            if (currentTime - lastBackKeyTime > BACK_KEY_TIMEOUT) {
+                // First back press: Clear classification history
+                backKeyPressCount = 1
+                lastBackKeyTime = currentTime
+                clearClassificationHistory()
+                Log.d(TAG, "🔙 Back key - Visualization area: History cleared")
+                return true
+            } else {
+                // Second press within timeout: Still just clear (don't exit)
+                backKeyPressCount++
+                lastBackKeyTime = currentTime
+                clearClassificationHistory()
+                Log.d(TAG, "🔙 Back key - Visualization area: History cleared again (use Exit key to exit)")
+                return true
+            }
+        }
+
+        // Normal Back key handling for other areas
+        val currentTime = SystemClock.uptimeMillis()
+
+        if (currentTime - lastBackKeyTime > BACK_KEY_TIMEOUT) {
+            // First back press or timeout occurred - reset counter
+            backKeyPressCount = 1
+            lastBackKeyTime = currentTime
+
+            // First press: Clear classification history
+            clearClassificationHistory()
+            Log.d(TAG, "🔙 Back key - First press: History cleared")
+            return true
+
+        } else {
+            // Second press within timeout
+            backKeyPressCount++
+            lastBackKeyTime = currentTime
+
+            if (backKeyPressCount == 2) {
+                // Second press: Move focus to Classify button
+                currentFocusState = FocusState.BUTTON_CLASSIFY
+                updateFocusIndicator()
+                Log.d(TAG, "🔙 Back key - Second press: Focused Classify button")
+                return true
+            }
+        }
+
+        return true
+    }
+
+    // 🎮 Handle center/enter action based on current focus - Android TV optimized
+    private fun handleCenterAction(): Boolean {
+        return when (currentFocusState) {
+            FocusState.COORDINATE_AREA -> {
+                if (!isRunning) classifyCurrentPoint()
+                true
+            }
+            FocusState.BUTTON_CLASSIFY -> {
+                onClassifyClick(binding.classifyButton)
+                true
+            }
+            FocusState.BUTTON_BENCHMARK -> {
+                onBenchmarkClick(binding.benchmarkButton)
+                true
+            }
+            FocusState.BUTTON_GPU_TOGGLE -> {
+                onGPUClick(binding.gpuToggle)
+                true
+            }
+            FocusState.BUTTON_NAVIGATE -> {
+                onNavigateClick(binding.navigateButton)
+                true
+            }
+            FocusState.RESULT_AREA_1, FocusState.RESULT_AREA_2 -> {
+                // Center action in text areas - silent operation
+                true
+            }
+            FocusState.VISUALIZATION_AREA -> {
+                // Center action in visualization area - classify using standard method
+                if (!isRunning) {
+                    classifyCurrentPoint()
+                }
+                true
+            }
+        }
+    }
+
+    // 🎮 Navigation handlers - Android TV optimized with proper direction flow
+    private fun handleNavigationUp(): Boolean {
+        return when (currentFocusState) {
+            FocusState.RESULT_AREA_1 -> {
+                // Scroll up in left text area
+                binding.textView1.scrollBy(0, -50)
+                true
+            }
+            FocusState.RESULT_AREA_2 -> {
+                // Scroll up in right text area
+                binding.textView2.scrollBy(0, -50)
+                true
+            }
+            FocusState.VISUALIZATION_AREA -> {
+                // In visualization area, move cursor up
+                currentY = (currentY + moveStep).coerceAtMost(Y_MAX)
+                updateCoordinateDisplay()
+                drawCoordinateSystem()
+                true
+            }
+            FocusState.COORDINATE_AREA, FocusState.BUTTON_CLASSIFY, FocusState.BUTTON_BENCHMARK,
+            FocusState.BUTTON_GPU_TOGGLE, FocusState.BUTTON_NAVIGATE -> {
+                // Move to previous focus state
+                val currentIndex = focusStateOrder.indexOf(currentFocusState)
+                if (currentIndex > 0) {
+                    currentFocusState = focusStateOrder[currentIndex - 1]
+                    updateFocusIndicator()
+                }
+                true
+            }
+        }
+    }
+
+    private fun handleNavigationDown(): Boolean {
+        return when (currentFocusState) {
+            FocusState.RESULT_AREA_1 -> {
+                // Scroll down in left text area
+                binding.textView1.scrollBy(0, 50)
+                true
+            }
+            FocusState.RESULT_AREA_2 -> {
+                // Scroll down in right text area
+                binding.textView2.scrollBy(0, 50)
+                true
+            }
+            FocusState.VISUALIZATION_AREA -> {
+                // In visualization area, move cursor down
+                currentY = (currentY - moveStep).coerceAtLeast(Y_MIN)
+                updateCoordinateDisplay()
+                drawCoordinateSystem()
+                true
+            }
+            FocusState.COORDINATE_AREA, FocusState.BUTTON_CLASSIFY, FocusState.BUTTON_BENCHMARK,
+            FocusState.BUTTON_GPU_TOGGLE, FocusState.BUTTON_NAVIGATE -> {
+                // Move to next focus state
+                val currentIndex = focusStateOrder.indexOf(currentFocusState)
+                if (currentIndex < focusStateOrder.size - 1) {
+                    currentFocusState = focusStateOrder[currentIndex + 1]
+                    updateFocusIndicator()
+                }
+                true
+            }
+        }
+    }
+
+    private fun handleNavigationLeft(): Boolean {
+        return when (currentFocusState) {
+            FocusState.RESULT_AREA_2 -> {
+                // Move from right text area to left text area
+                currentFocusState = FocusState.RESULT_AREA_1
+                updateFocusIndicator()
+                true
+            }
+            FocusState.BUTTON_BENCHMARK -> {
+                // Move from Benchmark to Classify button
+                currentFocusState = FocusState.BUTTON_CLASSIFY
+                updateFocusIndicator()
+                true
+            }
+            FocusState.BUTTON_NAVIGATE -> {
+                // Move from Navigate to Benchmark button
+                currentFocusState = FocusState.BUTTON_BENCHMARK
+                updateFocusIndicator()
+                true
+            }
+            FocusState.VISUALIZATION_AREA -> {
+                // In visualization area, move cursor left
+                currentX = (currentX - moveStep).coerceAtLeast(X_MIN)
+                updateCoordinateDisplay()
+                drawCoordinateSystem()
+                true
+            }
+            FocusState.COORDINATE_AREA, FocusState.BUTTON_CLASSIFY, FocusState.BUTTON_GPU_TOGGLE,
+            FocusState.RESULT_AREA_1 -> {
+                // No horizontal navigation for these states
+                false
+            }
+        }
+    }
+
+    private fun handleNavigationRight(): Boolean {
+        return when (currentFocusState) {
+            FocusState.RESULT_AREA_1 -> {
+                // Move from left text area to right text area
+                currentFocusState = FocusState.RESULT_AREA_2
+                updateFocusIndicator()
+                true
+            }
+            FocusState.BUTTON_CLASSIFY -> {
+                // Move from Classify to Benchmark button
+                currentFocusState = FocusState.BUTTON_BENCHMARK
+                updateFocusIndicator()
+                true
+            }
+            FocusState.BUTTON_BENCHMARK -> {
+                // Move from Benchmark to Navigate button
+                currentFocusState = FocusState.BUTTON_NAVIGATE
+                updateFocusIndicator()
+                true
+            }
+            FocusState.VISUALIZATION_AREA -> {
+                // In visualization area, move cursor right
+                currentX = (currentX + moveStep).coerceAtMost(X_MAX)
+                updateCoordinateDisplay()
+                drawCoordinateSystem()
+                true
+            }
+            FocusState.COORDINATE_AREA, FocusState.BUTTON_GPU_TOGGLE, FocusState.BUTTON_NAVIGATE,
+            FocusState.RESULT_AREA_2 -> {
+                // No horizontal navigation for these states
+                false
+            }
+        }
     }
 
     private fun toggleAccelerator() {
@@ -612,7 +1228,6 @@ class MainActivity : Activity() {
 
         if (!isGpuAvailable && !isNnApiAvailable) {
             Log.w(TAG, "No hardware acceleration available for toggle")
-            safeShowToast("No hardware acceleration available")
             return
         }
 
@@ -625,7 +1240,7 @@ class MainActivity : Activity() {
 
     fun onClassifyClick(v: View) {
         if (isRunning) {
-            safeShowToast("Already running classification...")
+            Log.d(TAG, "Already running classification")
             return
         }
         classifyCurrentPoint()
@@ -633,17 +1248,22 @@ class MainActivity : Activity() {
 
     fun onBenchmarkClick(v: View) {
         if (isRunning) {
-            safeShowToast("Already running benchmark...")
+            Log.d(TAG, "Already running benchmark")
             return
         }
         runBenchmark()
     }
 
-    fun onClearClick(v: View) {
-        clearClassificationHistory()
+    fun onNavigateClick(v: View) {
+        // Switch focus to visualization area
+        Log.d(TAG, "🎮 Navigate button clicked - Current state before: ${currentFocusState.name}")
+        currentFocusState = FocusState.VISUALIZATION_AREA
+        Log.d(TAG, "🎮 Navigate button clicked - Current state after: ${currentFocusState.name}")
+        updateFocusIndicator()
+        Log.d(TAG, "🎮 Navigate button clicked - Switched to visualization area - updateFocusIndicator completed")
     }
 
-    // 🚀 성능 개선: 미리 생성된 인터프리터 사용
+    // 🚀 Performance improvement: Use pre-created interpreters
     private fun classifyCurrentPoint() {
         if (tfliteModel == null) {
             showError("TensorFlow Lite model not loaded")
@@ -716,16 +1336,18 @@ class MainActivity : Activity() {
                                 |• Processing: Neural network inference
                                 |• Output: Binary classification (Blue/Red)
                                 |• Validation: Compare with ground truth
+                                |
+                                |🎮 Current Focus: ${currentFocusState.name}
                             """.trimMargin()
 
-                        // 전체 정확도 계산
+                        // Calculate overall accuracy
                         val totalPoints = classificationHistory.size
                         val correctPredictions = classificationHistory.count { it.isCorrect }
                         val accuracy = if (totalPoints > 0) {
                             (correctPredictions * 100.0 / totalPoints)
                         } else 0.0
 
-                        // 클래스별 통계
+                        // Class-wise statistics
                         val bluePoints = classificationHistory.filter { it.groundTruth }
                         val redPoints = classificationHistory.filter { !it.groundTruth }
                         val blueAccuracy = if (bluePoints.isNotEmpty()) {
@@ -759,11 +1381,21 @@ class MainActivity : Activity() {
                                 |• ● Filled circle = Correct prediction
                                 |• ○ Empty circle + X = Wrong prediction
                                 |• Blue/Red = Predicted class color
+                                |
+                                |🎮 Enhanced Navigation Controls:
+                                |• Focus: ${currentFocusState.name}
+                                |• D-pad: Move cursor (coordinate/visualization areas)
+                                |• Nav keys: Move between buttons
+                                |• Up/Down in text areas: Scroll content
+                                |• Center: Execute current action
+                                |• 🎮 Nav button: Switch to visualization area
+                                |• 🚪 Exit key: Leave area → Focus Classify
+                                |• Results area: Exit key to exit
                             """.trimMargin()
 
                         drawCoordinateSystem()
 
-                        // 📜 새 결과가 표시되면 맨 위로 스크롤
+                        // 📜 Scroll to top when new result is displayed
                         scrollToTop()
                     }
                 }
@@ -780,20 +1412,20 @@ class MainActivity : Activity() {
         }
     }
 
-    // 🚀 성능 최적화된 분류 함수 (warm-up 포함 + 정답 체크)
+    // 🚀 Performance optimized classification function (with warm-up + accuracy check)
     private fun classifyPointFast(interpreter: Interpreter, x: Float, y: Float, isWarmup: Boolean = false): ClassificationPoint? {
         return try {
-            // 입력 준비 (버퍼 재사용)
+            // Input preparation (buffer reuse)
             inputBuffer?.rewind()
             inputBuffer?.putFloat(x)
             inputBuffer?.putFloat(y)
 
-            // 출력 준비
+            // Output preparation
             val outputBuffer = ByteBuffer.allocateDirect(4).apply {
                 order(ByteOrder.nativeOrder())
             }
 
-            // 고정밀 시간 측정 (warm-up일 때는 측정하지 않음)
+            // High precision timing (no measurement during warm-up)
             val startTime = if (!isWarmup) System.nanoTime() else 0L
             interpreter.run(inputBuffer, outputBuffer)
             val endTime = if (!isWarmup) System.nanoTime() else 0L
@@ -801,15 +1433,15 @@ class MainActivity : Activity() {
             val inferenceTimeMs = if (!isWarmup) {
                 maxOf(1L, (endTime - startTime) / 1_000_000L)
             } else {
-                1L // warm-up은 시간 측정 안함
+                1L // No timing measurement for warm-up
             }
 
-            // 결과 추출
+            // Result extraction
             outputBuffer.rewind()
             val probability = outputBuffer.float
             val predictedIsBlue = probability >= 0.5f
 
-            // 🎯 Ground Truth 계산 및 정확도 체크
+            // 🎯 Ground Truth calculation and accuracy check
             val actualIsBlue = getGroundTruth(x, y)
             val isCorrect = predictedIsBlue == actualIsBlue
 
@@ -834,7 +1466,7 @@ class MainActivity : Activity() {
                     binding.gpuBar.progress = 0
                 }
 
-                // CPU 벤치마크
+                // CPU benchmark
                 Log.d(TAG, "🚀 Starting CPU benchmark")
                 val cpuStartTime = SystemClock.uptimeMillis()
                 val cpuResults = runBenchmarkForBackend("CPU")
@@ -843,7 +1475,7 @@ class MainActivity : Activity() {
                 cpuBenchmarkResult = createBenchmarkResult(cpuResults, cpuTotalTime, "CPU")
                 Log.d(TAG, "🏁 CPU benchmark completed: ${cpuResults.size} points, avg: ${cpuBenchmarkResult?.avgInferenceTime}ms")
 
-                // GPU 벤치마크
+                // GPU benchmark
                 if (isGpuAvailable && gpuInterpreter != null) {
                     runOnUiThread {
                         binding.textView1.text = "Testing GPU acceleration..."
@@ -860,7 +1492,7 @@ class MainActivity : Activity() {
                     Log.d(TAG, "🏁 GPU benchmark completed: ${gpuResults.size} points, avg: ${gpuBenchmarkResult?.avgInferenceTime}ms")
                 }
 
-                // NPU 벤치마크
+                // NPU benchmark
                 if (isNnApiAvailable && npuInterpreter != null) {
                     runOnUiThread {
                         binding.textView1.text = "Testing NPU acceleration..."
@@ -913,7 +1545,7 @@ class MainActivity : Activity() {
         )
     }
 
-    // 🚀 성능 개선: 미리 생성된 인터프리터 사용
+    // 🚀 Performance improvement: Use pre-created interpreters
     private fun runBenchmarkForBackend(backend: String): List<ClassificationPoint> {
         val results = mutableListOf<ClassificationPoint>()
 
@@ -955,7 +1587,7 @@ class MainActivity : Activity() {
                 if (point != null) {
                     results.add(point)
 
-                    // 각 포인트의 개별 시간 로깅 (정답 여부 포함)
+                    // Log individual point timings (including accuracy)
                     val className = if (point.isBlue) "Blue" else "Red"
                     val groundTruthClass = if (point.groundTruth) "Blue" else "Red"
                     val correctIcon = if (point.isCorrect) "✅" else "❌"
@@ -976,7 +1608,7 @@ class MainActivity : Activity() {
             }
         }
 
-        // 상세 통계 로깅 (모든 값 포함 - outlier 제거 안함)
+        // Detailed statistics logging (including all values - no outlier removal)
         if (results.isNotEmpty()) {
             val times = results.map { it.inferenceTime }
             val minTime = times.minOrNull() ?: 0L
@@ -990,7 +1622,7 @@ class MainActivity : Activity() {
                 }
             }
 
-            // 표준편차 계산
+            // Standard deviation calculation
             val variance = times.map { (it - avgTime) * (it - avgTime) }.average()
             val stdDev = sqrt(variance)
 
@@ -1003,12 +1635,12 @@ class MainActivity : Activity() {
             Log.d(TAG, "   • Std Dev: ${String.format("%.1f", stdDev)}ms")
             Log.d(TAG, "   • Classification: Blue=${results.count { it.isBlue }}, Red=${results.count { !it.isBlue }}")
 
-            // 🎯 정확도 계산 및 표시
+            // 🎯 Accuracy calculation and display
             val correctPredictions = results.count { it.isCorrect }
             val accuracy = (correctPredictions * 100.0 / results.size)
             Log.d(TAG, "   • Accuracy: $correctPredictions/${results.size} (${String.format("%.1f", accuracy)}%)")
 
-            // 클래스별 정확도
+            // Class-wise accuracy
             val bluePoints = results.filter { it.groundTruth }
             val redPoints = results.filter { !it.groundTruth }
             if (bluePoints.isNotEmpty()) {
@@ -1020,7 +1652,7 @@ class MainActivity : Activity() {
                 Log.d(TAG, "     - Red class accuracy: ${String.format("%.1f", redAccuracy)}% (${redPoints.count { it.isCorrect }}/${redPoints.size})")
             }
 
-            // 성능 분포 분석 (모든 값 포함)
+            // Performance distribution analysis (including all values)
             val fastCount = times.count { it <= 1 }
             val normalCount = times.count { it in 2..5 }
             val slowCount = times.count { it > 5 }
@@ -1030,13 +1662,13 @@ class MainActivity : Activity() {
             Log.d(TAG, "     - Normal (2-5ms): $normalCount points (${String.format("%.1f", normalCount * 100.0 / results.size)}%)")
             Log.d(TAG, "     - Slow (>5ms): $slowCount points (${String.format("%.1f", slowCount * 100.0 / results.size)}%)")
 
-            // 성능 일관성 평가
+            // Performance consistency evaluation
             val consistencyScore = if (avgTime > 0) {
                 100.0 - (stdDev / avgTime * 100.0).coerceAtMost(100.0)
             } else 0.0
             Log.d(TAG, "   • Performance consistency: ${String.format("%.1f", consistencyScore)}%")
 
-            // Range 분석
+            // Range analysis
             val range = maxTime - minTime
             Log.d(TAG, "   • Performance range: ${range}ms (${minTime}ms ~ ${maxTime}ms)")
         }
@@ -1055,7 +1687,7 @@ class MainActivity : Activity() {
             val results = listOfNotNull(cpu, gpu, npu).sortedBy { it.avgInferenceTime }
             val winner = results.firstOrNull()
 
-            // 성능 향상 계산
+            // Performance improvement calculation
             val cpuTime = cpu?.avgInferenceTime ?: 0L
             val bestTime = winner?.avgInferenceTime ?: 0L
             val speedupText = if (cpuTime > 0 && bestTime > 0 && winner?.backend != "CPU") {
@@ -1092,9 +1724,12 @@ class MainActivity : Activity() {
                     |💡 Interpretation:
                     |Lower latency = Better performance
                     |Check logs for detailed per-point analysis
+                    |
+                    |🎮 Navigation: Focus - ${currentFocusState.name}
+                    |Use navigation keys to move between controls
                 """.trimMargin()
 
-            // 상세 통계 정보 표시
+            // Detailed statistics information display
             val detailsText = buildString {
                 appendLine("📈 Detailed Performance Analysis:")
                 appendLine("━━━━━━━━━━━━━━━━━━━━━━━━")
@@ -1102,8 +1737,8 @@ class MainActivity : Activity() {
 
                 listOfNotNull(cpu, gpu, npu).forEach { result ->
                     val backendHistory = classificationHistory.filter {
-                        // 벤치마크에서 사용된 포인트들 필터링 (최근 28개씩)
-                        true // 모든 히스토리 포함하거나 백엔드별로 구분 가능
+                        // Filter points used in benchmark (recent 28 each) or include all history
+                        true // Include all history or can differentiate by backend
                     }
                     val backendAccuracy = if (backendHistory.isNotEmpty()) {
                         backendHistory.count { it.isCorrect } * 100.0 / backendHistory.size
@@ -1126,7 +1761,7 @@ class MainActivity : Activity() {
                         appendLine("  🎯 Accuracy: ${String.format("%.1f", backendAccuracy)}% (${backendHistory.count { it.isCorrect }}/${backendHistory.size})")
                     }
 
-                    // 성능 등급 표시
+                    // Performance grade display
                     val grade = when {
                         result.avgInferenceTime <= 1 -> "🏆 A+ (Excellent)"
                         result.avgInferenceTime <= 3 -> "🥇 A (Very Good)"
@@ -1138,7 +1773,7 @@ class MainActivity : Activity() {
                     appendLine()
                 }
 
-                // 전체 성능 비교
+                // Overall performance comparison
                 if (results.size > 1) {
                     appendLine("🏁 Performance Rankings:")
                     appendLine("━━━━━━━━━━━━━━━━━━━━━━━━")
@@ -1163,11 +1798,20 @@ class MainActivity : Activity() {
                     appendLine("• NPU may show higher variation due to scheduling")
                     appendLine("• Check verbose logs for per-point timings")
                 }
+
+                appendLine()
+                appendLine("🎮 Enhanced Navigation:")
+                appendLine("• Current Focus: ${currentFocusState.name}")
+                appendLine("• D-pad: Move cursor (coordinate area)")
+                appendLine("• Navigation keys: Move between controls")
+                appendLine("• Up/Down in text areas: Scroll content")
+                appendLine("• 🚪 Exit key: Leave area → Focus Classify")
+                appendLine("• Results area: Exit key to exit")
             }
 
             binding.textView2.text = detailsText
 
-            // 📜 벤치마크 결과가 표시되면 맨 위로 스크롤
+            // 📜 Scroll to top when benchmark results are displayed
             scrollToTop()
         }
     }
@@ -1178,7 +1822,6 @@ class MainActivity : Activity() {
 
         if (!isGpuAvailable && !isNnApiAvailable) {
             Log.w(TAG, "❌ No hardware acceleration available")
-            safeShowToast("No hardware acceleration available")
             binding.gpuToggle.isChecked = false
             return
         }
@@ -1186,39 +1829,28 @@ class MainActivity : Activity() {
         val useAccelerator = binding.gpuToggle.isChecked
         Log.d(TAG, "🔄 Hardware acceleration toggled to: $useAccelerator")
 
-        // 현재 인터프리터 상태 체크
+        // Current interpreter status check
         Log.d(TAG, "🔍 Interpreter status - CPU: ${cpuInterpreter != null}, GPU: ${gpuInterpreter != null}, NPU: ${npuInterpreter != null}")
 
-        val message = if (useAccelerator) {
-            when {
-                isGpuAvailable && isNnApiAvailable -> {
-                    Log.i(TAG, "🚀 Both GPU and NPU acceleration enabled")
-                    "🚀 Hardware acceleration enabled (GPU + NPU)"
-                }
-                isGpuAvailable -> {
-                    Log.i(TAG, "🎉 GPU acceleration enabled")
-                    "🎉 GPU acceleration enabled"
-                }
-                isNnApiAvailable -> {
-                    Log.i(TAG, "🧠 NPU acceleration enabled")
-                    "🧠 NPU acceleration enabled"
-                }
-                else -> {
-                    Log.w(TAG, "❌ No acceleration available")
-                    "❌ No acceleration available"
-                }
+        when {
+            useAccelerator && isGpuAvailable && isNnApiAvailable -> {
+                Log.i(TAG, "🚀 Both GPU and NPU acceleration enabled")
             }
-        } else {
-            Log.i(TAG, "💻 CPU only mode enabled")
-            "💻 CPU only mode"
+            useAccelerator && isGpuAvailable -> {
+                Log.i(TAG, "🎉 GPU acceleration enabled")
+            }
+            useAccelerator && isNnApiAvailable -> {
+                Log.i(TAG, "🧠 NPU acceleration enabled")
+            }
+            !useAccelerator -> {
+                Log.i(TAG, "💻 CPU only mode enabled")
+            }
+            else -> {
+                Log.w(TAG, "❌ No acceleration available")
+            }
         }
 
-        Log.d(TAG, "📤 About to display message: $message")
-
-        // 안전한 메시지 표시 (Toast 없음)
-        safeShowToast(message)
-
-        // UI 상태 리셋
+        // Reset UI state
         binding.cpuBar.progress = 0
         binding.gpuBar.progress = 0
 
@@ -1228,15 +1860,18 @@ class MainActivity : Activity() {
     private fun clearClassificationHistory() {
         classificationHistory.clear()
         runOnUiThread {
-            // 초기 상태로 복원
+            // Restore to initial state
             binding.textView1.text = """
                     |🎯 Classification Results
                     |
                     |Classification history cleared!
                     |
-                    |📱 How to use:
-                    |• Use D-pad to move the cursor
+                    |📱 Enhanced Navigation Controls:
+                    |• Use D-pad to move the cursor (coordinate area)
                     |• Press Center button to classify current point
+                    |• Use navigation keys to move between controls
+                    |• 🎮 Nav button: Switch to visualization area
+                    |• 🚪 Exit key: Leave area → Focus to Classify button
                     |• Results will show predicted vs actual class
                     |• ✅ = Correct prediction, ❌ = Wrong prediction
                     |
@@ -1245,8 +1880,12 @@ class MainActivity : Activity() {
                     |• Hardware acceleration (CPU/NPU)
                     |• Accuracy tracking and statistics
                     |• Interactive coordinate visualization
+                    |• Enhanced navigation and focus management
+                    |• Dual-area cursor control
                     |
                     |Ready for new classifications!
+                    |
+                    |🎮 Current Focus: ${currentFocusState.name}
                 """.trimMargin()
 
             binding.textView2.text = """
@@ -1260,15 +1899,25 @@ class MainActivity : Activity() {
                     |🎯 Classification accuracy tracking
                     |📈 Performance monitoring
                     |🚀 Hardware acceleration metrics
+                    |
+                    |🎮 Enhanced Navigation Controls:
+                    |• Focus: ${currentFocusState.name}
+                    |• D-pad: Move cursor (coordinate/visualization areas)
+                    |• Nav keys: Move between buttons
+                    |• Up/Down in text areas: Scroll content
+                    |• Center: Execute current action
+                    |• 🎮 Nav button: Switch to visualization area
+                    |• 🚪 Exit key: Leave area → Focus Classify
+                    |• Results area: Use Exit key to exit
                 """.trimMargin()
 
-            // 기본 색상으로 복원
+            // Restore to default colors
             binding.textView1.setTextColor(Color.BLACK)
             binding.textView2.setTextColor(Color.BLACK)
 
             drawCoordinateSystem()
 
-            // 📜 히스토리 클리어 후 맨 위로 스크롤
+            // 📜 Scroll to top after history clear
             scrollToTop()
 
             Log.d(TAG, "🧹 Classification history cleared and UI reset")
@@ -1277,11 +1926,24 @@ class MainActivity : Activity() {
 
     private fun updateCoordinateDisplay() {
         runOnUiThread {
-            // Ground truth 정보도 함께 표시
+            // Also display ground truth information with enhanced TV visibility
             val groundTruth = getGroundTruth(currentX, currentY)
             val groundTruthClass = if (groundTruth) "Blue" else "Red"
+            val focusIndicator = when (currentFocusState) {
+                FocusState.COORDINATE_AREA -> "Coordinate Control"
+                FocusState.BUTTON_CLASSIFY -> "Classify Button"
+                FocusState.BUTTON_BENCHMARK -> "Benchmark Button"
+                FocusState.BUTTON_GPU_TOGGLE -> "GPU Toggle"
+                FocusState.BUTTON_NAVIGATE -> "Navigate Button"
+                FocusState.RESULT_AREA_1 -> "Results Area 1"
+                FocusState.RESULT_AREA_2 -> "Results Area 2"
+                FocusState.VISUALIZATION_AREA -> "🎮 NEURAL VISUALIZATION" // 🔧 Make it more obvious
+            }
 
-            binding.coordinateText.text = "Position: (${String.format("%.2f", currentX)}, ${String.format("%.2f", currentY)}) | Expected: $groundTruthClass"
+            binding.coordinateText.text = "Position: (${String.format("%.2f", currentX)}, ${String.format("%.2f", currentY)}) | Expected: $groundTruthClass | Focus: $focusIndicator"
+
+            // 🔧 Debug: Log coordinate display updates to track state changes
+            Log.v(TAG, "📍 Coordinate display updated - Focus: $focusIndicator (${currentFocusState.name})")
         }
     }
 
@@ -1289,7 +1951,7 @@ class MainActivity : Activity() {
         val bitmap = Bitmap.createBitmap(600, 400, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
 
-        // 배경
+        // Background
         canvas.drawColor(Color.WHITE)
 
         val paint = Paint().apply {
@@ -1297,12 +1959,12 @@ class MainActivity : Activity() {
             strokeWidth = 2f
         }
 
-        // 좌표축
+        // Coordinate axes
         paint.color = Color.GRAY
-        canvas.drawLine(300f, 0f, 300f, 400f, paint) // Y축
-        canvas.drawLine(0f, 200f, 600f, 200f, paint) // X축
+        canvas.drawLine(300f, 0f, 300f, 400f, paint) // Y-axis
+        canvas.drawLine(0f, 200f, 600f, 200f, paint) // X-axis
 
-        // 격자
+        // Grid
         paint.strokeWidth = 1f
         paint.color = Color.LTGRAY
         for (i in 0..6) {
@@ -1314,28 +1976,28 @@ class MainActivity : Activity() {
             canvas.drawLine(0f, y, 600f, y, paint)
         }
 
-        // 분류된 점들 그리기 (정답/오답 구분)
+        // Draw classified points (distinguish correct/incorrect)
         for (point in classificationHistory) {
             val screenX = ((point.x - X_MIN) / (X_MAX - X_MIN) * 600).coerceIn(0f, 600f)
             val screenY = (400 - (point.y - Y_MIN) / (Y_MAX - Y_MIN) * 400).coerceIn(0f, 400f)
 
-            // 예측 결과에 따른 색상
+            // Color based on prediction result
             val predictedColor = if (point.isBlue) Color.BLUE else Color.RED
 
-            // 정답 여부에 따른 시각화
+            // Visualization based on correctness
             if (point.isCorrect) {
-                // 정답: 채워진 원
+                // Correct: filled circle
                 paint.color = predictedColor
                 paint.style = Paint.Style.FILL
                 canvas.drawCircle(screenX, screenY, 8f, paint)
             } else {
-                // 오답: 테두리만 있는 원 + X 표시
+                // Incorrect: outline circle + X mark
                 paint.color = predictedColor
                 paint.style = Paint.Style.STROKE
                 paint.strokeWidth = 3f
                 canvas.drawCircle(screenX, screenY, 8f, paint)
 
-                // X 표시로 오답 강조
+                // X mark to emphasize incorrect prediction
                 paint.color = Color.BLACK
                 paint.strokeWidth = 2f
                 canvas.drawLine(screenX - 5f, screenY - 5f, screenX + 5f, screenY + 5f, paint)
@@ -1343,7 +2005,7 @@ class MainActivity : Activity() {
             }
         }
 
-        // 현재 커서 위치 (더 눈에 띄게)
+        // Current cursor position (more prominent)
         val cursorX = ((currentX - X_MIN) / (X_MAX - X_MIN) * 600).coerceIn(0f, 600f)
         val cursorY = (400 - (currentY - Y_MIN) / (Y_MAX - Y_MIN) * 400).coerceIn(0f, 400f)
 
@@ -1352,7 +2014,7 @@ class MainActivity : Activity() {
         paint.strokeWidth = 4f
         canvas.drawCircle(cursorX, cursorY, 15f, paint)
 
-        // 커서 중심점
+        // Cursor center point
         paint.style = Paint.Style.FILL
         paint.strokeWidth = 2f
         canvas.drawCircle(cursorX, cursorY, 3f, paint)
@@ -1362,67 +2024,29 @@ class MainActivity : Activity() {
         }
     }
 
-    // 🔧 안전한 메시지 표시 (Toast 완전 비활성화)
+    // 🔧 Safe message display (completely disable Toast)
     private fun safeShowToast(message: String) {
         Log.d(TAG, "📢 Message: $message")
 
-        // SystemUI 에러 방지를 위해 Toast 사용 안함
-        // UI에 직접 표시하는 방식만 사용
+        // No Toast usage to prevent SystemUI errors
+        // Only use direct UI display method
         displayMessageInUI(message)
     }
 
-    // 🎨 UI에 메시지 표시 (Toast 대체) + 자동 스크롤
+    // 🎨 Display message in UI (Toast replacement) + auto-scroll - DISABLED to reduce UI clutter
     private fun displayMessageInUI(message: String) {
-        try {
-            runOnUiThread {
-                // 타임스탬프 포함 메시지 생성
-                val timestamp = java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date())
-                val newMessage = "[$timestamp] $message"
+        // 🔧 Disabled to prevent UI clutter - only log the message
+        Log.d(TAG, "📢 Message (UI display disabled): $message")
 
-                // 기존 텍스트에 새 메시지 추가 (최대 20줄 유지)
-                val currentText = binding.textView1.text.toString()
-                val lines = currentText.split("\n").toMutableList()
-
-                // 새 메시지를 맨 위에 추가
-                lines.add(0, newMessage)
-                lines.add(1, "") // 빈 줄 추가
-
-                // 최대 25줄로 제한 (너무 길어지면 오래된 메시지 제거)
-                while (lines.size > 25) {
-                    lines.removeAt(lines.size - 1)
-                }
-
-                binding.textView1.text = lines.joinToString("\n")
-
-                // 메시지 색상 변경으로 주목도 높이기
-                when {
-                    message.contains("🧠 NPU") -> binding.textView1.setTextColor(android.graphics.Color.parseColor("#4CAF50"))
-                    message.contains("🎉 GPU") -> binding.textView1.setTextColor(android.graphics.Color.parseColor("#2196F3"))
-                    message.contains("💻 CPU") -> binding.textView1.setTextColor(android.graphics.Color.parseColor("#FF9800"))
-                    message.contains("❌") -> binding.textView1.setTextColor(android.graphics.Color.parseColor("#F44336"))
-                    else -> binding.textView1.setTextColor(android.graphics.Color.parseColor("#333333"))
-                }
-
-                // 맨 위로 스크롤 (새 메시지를 바로 보이도록)
-                binding.textView1.scrollTo(0, 0)
-
-                // 5초 후 기본 색상으로 복원
-                mainHandler.postDelayed({
-                    binding.textView1.setTextColor(android.graphics.Color.parseColor("#333333"))
-                }, 5000)
-
-                Log.d(TAG, "✅ UI message displayed: $message")
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "❌ Failed to display UI message: $message", e)
-        }
+        // UI message display disabled to keep interface clean
+        // All messages are still logged for debugging purposes
     }
 
     private fun showError(message: String) {
         Log.e(TAG, "❌ Error: $message")
 
         runOnUiThread {
-            // Toast 대신 UI에 직접 에러 표시
+            // Display error directly in UI instead of Toast
             displayMessageInUI("❌ Error: $message")
 
             binding.textView1.text = "❌ Error: $message"
@@ -1430,7 +2054,7 @@ class MainActivity : Activity() {
             binding.textView1.setTextColor(Color.RED)
             binding.textView2.setTextColor(Color.RED)
 
-            // 10초 후 기본 색상으로 복원
+            // Restore default color after 10 seconds
             mainHandler.postDelayed({
                 binding.textView1.setTextColor(Color.BLACK)
                 binding.textView2.setTextColor(Color.BLACK)

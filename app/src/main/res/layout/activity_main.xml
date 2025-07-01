@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="horizontal"
-    android:padding="16dp"
+    android:padding="12dp"
     android:background="#F5F5F5"
     android:baselineAligned="false"
     tools:context=".MainActivity">
@@ -15,65 +15,65 @@
         android:layout_height="match_parent"
         android:layout_weight="1"
         android:orientation="vertical"
-        android:padding="8dp">
+        android:padding="6dp">
 
-        <!-- Title -->
+        <!-- Title - 🔧 Further reduced height and font -->
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="🧠 Neural Playground"
-            android:textSize="24sp"
+            android:textSize="16sp"
             android:textStyle="bold"
             android:textColor="@android:color/black"
             android:gravity="center"
-            android:layout_marginBottom="8dp" />
+            android:layout_marginBottom="2dp" />
 
-        <!-- Subtitle -->
+        <!-- Subtitle - 🔧 Further reduced height and font -->
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Coursera Deep Learning - Week 3"
-            android:textSize="16sp"
+            android:textSize="10sp"
             android:textColor="#666666"
             android:gravity="center"
-            android:layout_marginBottom="16dp" />
+            android:layout_marginBottom="4dp" />
 
-        <!-- Current Coordinates -->
+        <!-- Current Coordinates - 🔧 Further reduced font and padding -->
         <TextView
             android:id="@+id/coordinateText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Position: (0.00, 0.00)"
-            android:textSize="18sp"
+            android:textSize="11sp"
             android:textStyle="bold"
             android:textColor="@android:color/black"
             android:gravity="center"
             android:background="#E3F2FD"
-            android:padding="12dp"
-            android:layout_marginBottom="16dp"
+            android:padding="4dp"
+            android:layout_marginBottom="4dp"
             android:elevation="2dp" />
 
-        <!-- Control Buttons -->
+        <!-- Control Buttons - 🔧 Further reduced height -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center"
-            android:layout_marginBottom="16dp"
+            android:layout_marginBottom="4dp"
             android:baselineAligned="false">
 
             <Button
                 android:id="@+id/classifyButton"
                 style="?android:attr/buttonBarButtonStyle"
                 android:layout_width="0dp"
-                android:layout_height="56dp"
+                android:layout_height="36dp"
                 android:layout_weight="1"
                 android:text="🎯 Classify"
-                android:textSize="14sp"
+                android:textSize="10sp"
                 android:textStyle="bold"
                 android:background="#4CAF50"
                 android:textColor="@android:color/white"
-                android:layout_marginEnd="4dp"
+                android:layout_marginEnd="2dp"
                 android:elevation="4dp"
                 android:focusable="true"
                 android:nextFocusRight="@+id/benchmarkButton" />
@@ -82,107 +82,108 @@
                 android:id="@+id/benchmarkButton"
                 style="?android:attr/buttonBarButtonStyle"
                 android:layout_width="0dp"
-                android:layout_height="56dp"
+                android:layout_height="36dp"
                 android:layout_weight="1"
                 android:text="🚀 Benchmark"
-                android:textSize="14sp"
+                android:textSize="10sp"
                 android:textStyle="bold"
                 android:background="#FF9800"
                 android:textColor="@android:color/white"
-                android:layout_marginStart="2dp"
-                android:layout_marginEnd="2dp"
+                android:layout_marginStart="1dp"
+                android:layout_marginEnd="1dp"
                 android:elevation="4dp"
                 android:focusable="true"
                 android:nextFocusLeft="@+id/classifyButton"
-                android:nextFocusRight="@+id/clearButton" />
+                android:nextFocusRight="@+id/navigateButton" />
 
             <Button
-                android:id="@+id/clearButton"
+                android:id="@+id/navigateButton"
                 style="?android:attr/buttonBarButtonStyle"
                 android:layout_width="0dp"
-                android:layout_height="56dp"
+                android:layout_height="36dp"
                 android:layout_weight="1"
-                android:text="🗑️ Clear"
-                android:textSize="14sp"
+                android:text="🎮 Nav"
+                android:textSize="10sp"
                 android:textStyle="bold"
-                android:background="#F44336"
+                android:background="#9C27B0"
                 android:textColor="@android:color/white"
-                android:layout_marginStart="4dp"
+                android:layout_marginStart="2dp"
                 android:elevation="4dp"
                 android:focusable="true"
                 android:nextFocusLeft="@+id/benchmarkButton" />
 
         </LinearLayout>
 
-        <!-- GPU Toggle -->
+        <!-- GPU Toggle - 🔧 Significantly reduced padding and height -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center_vertical"
             android:background="@android:color/white"
-            android:padding="12dp"
+            android:padding="4dp"
             android:elevation="2dp"
-            android:layout_marginBottom="16dp">
+            android:layout_marginBottom="4dp">
 
             <TextView
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="🚀 Hardware Acceleration"
-                android:textSize="16sp"
+                android:textSize="12sp"
                 android:textStyle="bold"
                 android:textColor="@android:color/black" />
 
             <ToggleButton
                 android:id="@+id/gpuToggle"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_height="32dp"
+                android:textSize="10sp"
                 android:textOn="ON"
                 android:textOff="OFF"
                 android:focusable="true" />
 
         </LinearLayout>
 
-        <!-- Progress Bars -->
+        <!-- Progress Bars - 🔧 Further minimized height and padding -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:background="@android:color/white"
-            android:padding="12dp"
+            android:padding="4dp"
             android:elevation="2dp"
-            android:layout_marginBottom="16dp">
+            android:layout_marginBottom="4dp">
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="📊 Performance Monitor"
-                android:textSize="16sp"
+                android:textSize="12sp"
                 android:textStyle="bold"
                 android:textColor="@android:color/black"
-                android:layout_marginBottom="8dp" />
+                android:layout_marginBottom="3dp" />
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
-                android:layout_marginBottom="8dp"
+                android:layout_marginBottom="2dp"
                 android:baselineAligned="false">
 
                 <TextView
-                    android:layout_width="60dp"
+                    android:layout_width="40dp"
                     android:layout_height="wrap_content"
                     android:text="CPU:"
-                    android:textSize="14sp"
+                    android:textSize="10sp"
                     android:textColor="#666666" />
 
                 <ProgressBar
                     android:id="@+id/cpuBar"
                     style="?android:attr/progressBarStyleHorizontal"
                     android:layout_width="match_parent"
-                    android:layout_height="24dp"
+                    android:layout_height="12dp"
                     android:max="100"
                     android:progress="0"
                     android:progressTint="#4CAF50" />
@@ -197,17 +198,17 @@
                 android:baselineAligned="false">
 
                 <TextView
-                    android:layout_width="60dp"
+                    android:layout_width="40dp"
                     android:layout_height="wrap_content"
                     android:text="HW:"
-                    android:textSize="14sp"
+                    android:textSize="10sp"
                     android:textColor="#666666" />
 
                 <ProgressBar
                     android:id="@+id/gpuBar"
                     style="?android:attr/progressBarStyleHorizontal"
                     android:layout_width="match_parent"
-                    android:layout_height="24dp"
+                    android:layout_height="12dp"
                     android:max="100"
                     android:progress="0"
                     android:progressTint="#2196F3" />
@@ -216,28 +217,28 @@
 
         </LinearLayout>
 
-        <!-- 결과 표시 영역 - 스크롤 가능하도록 개선 -->
+        <!-- Results & Analysis area - 🔧 Further increased weight for maximum space -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            android:layout_weight="1"
+            android:layout_weight="4"
             android:orientation="vertical"
             android:background="@android:color/white"
             android:elevation="2dp">
 
-            <!-- 헤더 -->
+            <!-- Header - Minimized padding -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="📋 Results &amp; Analysis"
-                android:textSize="16sp"
+                android:textSize="13sp"
                 android:textStyle="bold"
                 android:textColor="@android:color/white"
                 android:background="#2196F3"
-                android:padding="8dp"
+                android:padding="4dp"
                 android:gravity="center" />
 
-            <!-- 스크롤 가능한 결과 영역 -->
+            <!-- Scrollable results area - Maximum space utilization -->
             <ScrollView
                 android:id="@+id/resultsScrollView"
                 android:layout_width="match_parent"
@@ -251,52 +252,50 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="8dp">
+                    android:padding="4dp">
 
-                    <!-- Status Text 1 - 분류 결과 -->
+                    <!-- Status Text 1 - Classification results -->
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="🎯 Classification Results"
-                        android:textSize="14sp"
+                        android:textSize="12sp"
                         android:textStyle="bold"
                         android:textColor="#2196F3"
-                        android:layout_marginBottom="4dp" />
+                        android:layout_marginBottom="2dp" />
 
-                    <!-- 여기가 중요: textView1 ID 추가 -->
                     <TextView
                         android:id="@+id/textView1"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="Ready to run planar classification\n\nUse D-pad to move cursor and Center button to classify points."
-                        android:textSize="13sp"
+                        android:textSize="11sp"
                         android:textColor="@android:color/black"
                         android:background="#F8F9FA"
-                        android:padding="8dp"
-                        android:layout_marginBottom="12dp"
-                        android:lineSpacingExtra="2dp" />
+                        android:padding="4dp"
+                        android:layout_marginBottom="6dp"
+                        android:lineSpacingExtra="1dp" />
 
-                    <!-- Status Text 2 - 히스토리 및 통계 -->
+                    <!-- Status Text 2 - History and statistics -->
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="📊 History &amp; Statistics"
-                        android:textSize="14sp"
+                        android:textSize="12sp"
                         android:textStyle="bold"
                         android:textColor="#4CAF50"
-                        android:layout_marginBottom="4dp" />
+                        android:layout_marginBottom="2dp" />
 
-                    <!-- 여기가 중요: textView2 ID 추가 -->
                     <TextView
                         android:id="@+id/textView2"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="No classifications yet\n\nStatistics will appear here after running classifications or benchmarks."
-                        android:textSize="12sp"
+                        android:textSize="10sp"
                         android:textColor="#666666"
                         android:background="#F8F9FA"
-                        android:padding="8dp"
-                        android:lineSpacingExtra="2dp" />
+                        android:padding="4dp"
+                        android:lineSpacingExtra="1dp" />
 
                 </LinearLayout>
 
@@ -308,21 +307,24 @@
 
     <!-- Right Panel: Coordinate System Visualization -->
     <LinearLayout
+        android:id="@+id/rightPanel"
         android:layout_width="0dp"
         android:layout_height="match_parent"
         android:layout_weight="1"
         android:orientation="vertical"
-        android:padding="8dp">
+        android:padding="6dp"
+        android:focusable="true"
+        android:focusableInTouchMode="true">
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Neural Network Visualization"
-            android:textSize="18sp"
+            android:textSize="14sp"
             android:textStyle="bold"
             android:textColor="@android:color/black"
             android:gravity="center"
-            android:layout_marginBottom="8dp" />
+            android:layout_marginBottom="4dp" />
 
         <ImageView
             android:id="@+id/coordinateView"
@@ -332,19 +334,22 @@
             android:background="@android:color/white"
             android:scaleType="fitCenter"
             android:elevation="2dp"
-            android:contentDescription="Neural network visualization" />
+            android:contentDescription="Neural network visualization"
+            android:focusable="true"
+            android:focusableInTouchMode="true" />
 
-        <!-- Remote Control Instructions -->
+        <!-- Navigation Instructions - 🔧 Clean navigation instructions without test info -->
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="🎮 Remote Control Mapping:\n• D-pad: Move cursor\n• Center: Classify point\n• ⏪ Rewind: Run benchmark\n• ⏩ Fast Forward: Toggle GPU\n• Back: Clear history"
-            android:textSize="12sp"
+            android:text="🎮 Enhanced Navigation:\n• D-pad: Move cursor\n• Center: Classify point\n• Nav keys: Button navigation\n• 🎮 Nav button: Switch to visualization\n• 🚪 Exit key: Leave area → Focus Classify\n• ⏪ Rewind: Run benchmark\n• ⏩ Fast Forward: Toggle GPU"
+            android:textSize="10sp"
             android:textColor="@android:color/black"
             android:background="#FFF3E0"
-            android:padding="8dp"
-            android:layout_marginTop="8dp"
-            android:elevation="1dp" />
+            android:padding="6dp"
+            android:layout_marginTop="4dp"
+            android:elevation="1dp"
+            android:lineSpacingExtra="1dp" />
 
     </LinearLayout>
 
